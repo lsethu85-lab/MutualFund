@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quantum MF Terminal — Institutional Mutual Fund Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-app: #0a0e14;
+    --bg-panel: #0f141c;
+    --bg-card: #131a24;
+    --bg-card-hover: #182030;
+    --bg-elevated: #1a2332;
+    --border: #1f2937;
+    --border-strong: #2a3647;
+    --text-primary: #e6edf7;
+    --text-secondary: #8b97ab;
+    --text-muted: #5a6678;
+    --accent: #4cc2ff;
+    --accent-strong: #00a7ff;
+    --accent-glow: rgba(76, 194, 255, 0.18);
+    --trend-up: #22c55e;
+    --trend-up-bg: rgba(34, 197, 94, 0.12);
+    --trend-down: #ef4444;
+    --trend-down-bg: rgba(239, 68, 68, 0.12);
+    --warning: #f59e0b;
+    --warning-bg: rgba(245, 158, 11, 0.12);
+    --info: #4cc2ff;
+    --info-bg: rgba(76, 194, 255, 0.12);
+    --purple: #a78bfa;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 30px rgba(76, 194, 255, 0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg-app); color: var(--text-primary); font-family: var(--body); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+  body { background-image: radial-gradient(ellipse at top, rgba(76, 194, 255, 0.04), transparent 50%), radial-gradient(ellipse at bottom right, rgba(167, 139, 250, 0.03), transparent 50%); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-panel); }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4759; }
+
+  /* HEADER */
+  .app-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(15,20,28,0.95), rgba(10,14,20,0.85));
+    backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 50;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-logo {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-weight: 800; color: #0a0e14; font-size: 18px;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  .brand-text h1 { font-family: var(--display); font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .brand-text p { font-size: 11px; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; }
+  .header-meta { display: flex; align-items: center; gap: 24px; }
+  .live-dot { display: inline-block; width: 8px; height: 8px; background: var(--trend-up); border-radius: 50%; box-shadow: 0 0 8px var(--trend-up); animation: pulse 1.6s infinite; margin-right: 8px; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .market-tag { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); }
+  .clock { font-family: var(--mono); font-size: 13px; color: var(--text-primary); padding: 6px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+
+  /* TABS */
+  .tabs-bar { display: flex; gap: 4px; padding: 0 32px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+  .tab-btn {
+    background: transparent; border: none; color: var(--text-secondary);
+    padding: 14px 22px; font-family: var(--body); font-size: 13px; font-weight: 500;
+    cursor: pointer; position: relative; letter-spacing: 0.3px; transition: color 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-btn.active { color: var(--accent); }
+  .tab-btn.active::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px;
+    height: 2px; background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  }
+  .tab-badge {
+    font-family: var(--mono); font-size: 10px; padding: 2px 6px;
+    background: var(--bg-elevated); border-radius: 4px; color: var(--text-secondary);
+  }
+  .tab-btn.active .tab-badge { background: var(--accent-glow); color: var(--accent); }
+
+  /* MAIN */
+  main { padding: 24px 32px 60px; max-width: 1800px; margin: 0 auto; }
+  .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+  .panel-title { font-family: var(--display); font-size: 22px; font-weight: 700; letter-spacing: 0.3px; }
+  .panel-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.4px; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; position: relative; overflow: hidden; transition: all 0.2s;
+  }
+  .kpi:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .kpi::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--accent);
+  }
+  .kpi.up::before { background: var(--trend-up); }
+  .kpi.down::before { background: var(--trend-down); }
+  .kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .kpi-value { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .kpi-sub { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .kpi-sub.up { color: var(--trend-up); }
+  .kpi-sub.down { color: var(--trend-down); }
+
+  /* CARDS / TABLES */
+  .panel-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; }
+  .panel-card-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .panel-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.4px; text-transform: uppercase; }
+  .panel-card-body { padding: 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  thead th {
+    text-align: left; padding: 11px 14px; background: var(--bg-panel);
+    font-size: 10.5px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border);
+    white-space: nowrap; position: sticky; top: 0;
+  }
+  tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: var(--bg-card-hover); }
+  tbody tr:last-child td { border-bottom: none; }
+  .mono { font-family: var(--mono); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .num.up { color: var(--trend-up); }
+  .num.down { color: var(--trend-down); }
+
+  /* FUND ROW DETAILS */
+  .fund-name { font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 3px; }
+  .fund-category { font-size: 11px; color: var(--text-muted); display: inline-block; padding: 2px 8px; background: var(--bg-elevated); border-radius: 4px; }
+  .amc-tag { font-size: 10px; color: var(--accent); margin-left: 6px; font-weight: 500; }
+
+  /* PERFORMANCE BARS */
+  .perf-track { display: flex; gap: 3px; align-items: flex-end; height: 28px; }
+  .perf-bar {
+    width: 18px; border-radius: 2px 2px 0 0; position: relative;
+    display: flex; align-items: flex-start; justify-content: center;
+    color: #fff; font-size: 9px; font-family: var(--mono); font-weight: 600;
+    padding-top: 2px; transition: all 0.2s; cursor: default;
+  }
+  .perf-bar:hover { filter: brightness(1.2); }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 9px; border-radius: 4px; font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.6px; font-family: var(--body);
+    border: 1px solid transparent;
+  }
+  .badge.buy { background: var(--info-bg); color: var(--info); border-color: rgba(76,194,255,0.3); }
+  .badge.hold { background: var(--warning-bg); color: var(--warning); border-color: rgba(245,158,11,0.3); }
+  .badge.sell { background: var(--trend-up-bg); color: var(--trend-up); border-color: rgba(34,197,94,0.3); }
+  .badge.sl { background: var(--trend-down-bg); color: var(--trend-down); border-color: rgba(239,68,68,0.3); }
+  .badge.neutral { background: var(--bg-elevated); color: var(--text-secondary); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; }
+
+  /* AI SCORE */
+  .ai-score { display: flex; align-items: center; gap: 10px; }
+  .ai-bar { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; min-width: 70px; }
+  .ai-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .ai-num { font-family: var(--mono); font-weight: 700; font-size: 13px; min-width: 30px; text-align: right; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-strong);
+    background: var(--bg-elevated); color: var(--text-primary);
+    font-size: 11.5px; font-weight: 500; font-family: var(--body); cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg-card-hover); border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #0a0e14; border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { background: var(--accent-strong); color: #0a0e14; box-shadow: 0 0 16px var(--accent-glow); }
+  .btn.success { background: var(--trend-up-bg); color: var(--trend-up); border-color: rgba(34,197,94,0.3); }
+  .btn.success:hover { background: var(--trend-up); color: #0a0e14; }
+  .btn.danger { background: var(--trend-down-bg); color: var(--trend-down); border-color: rgba(239,68,68,0.3); }
+  .btn.danger:hover { background: var(--trend-down); color: #fff; }
+  .btn.sm { padding: 5px 9px; font-size: 10.5px; }
+  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* INLINE QTY INPUT */
+  .qty-input {
+    width: 70px; background: var(--bg-elevated); border: 1px solid var(--border-strong);
+    color: var(--text-primary); font-family: var(--mono); font-size: 12px;
+    padding: 5px 8px; border-radius: 4px; text-align: right;
+  }
+  .qty-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+
+  /* MODAL */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; animation: fadeIn 0.2s; }
+  .modal {
+    background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: var(--radius);
+    padding: 24px; width: 480px; max-width: 92%; box-shadow: var(--shadow);
+  }
+  .modal h3 { font-family: var(--display); font-size: 18px; margin-bottom: 6px; }
+  .modal p.sub { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+  .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .form-row label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; }
+  .form-row input, .form-row select {
+    background: var(--bg-elevated); border: 1px solid var(--border-strong);
+    color: var(--text-primary); font-family: var(--mono); font-size: 13px;
+    padding: 9px 12px; border-radius: 6px;
+  }
+  .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+  /* TOASTS */
+  .toast-stack { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--bg-card); border: 1px solid var(--border-strong); border-left: 3px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; min-width: 280px; box-shadow: var(--shadow);
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .toast.success { border-left-color: var(--trend-up); }
+  .toast.warning { border-left-color: var(--warning); }
+  .toast.info { border-left-color: var(--info); }
+  .toast.error { border-left-color: var(--trend-down); }
+  .toast-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .toast.success .toast-title { color: var(--trend-up); }
+  .toast.warning .toast-title { color: var(--warning); }
+  .toast.info .toast-title { color: var(--info); }
+  .toast.error .toast-title { color: var(--trend-down); }
+  .toast-msg { font-size: 12.5px; color: var(--text-secondary); }
+
+  /* TARGETS */
+  .targets-cell { display: flex; flex-direction: column; gap: 3px; font-family: var(--mono); font-size: 11px; }
+  .tgt-row { display: flex; gap: 6px; align-items: center; }
+  .tgt-row .lbl { color: var(--text-muted); width: 26px; }
+  .tgt-row .val { color: var(--text-primary); }
+  .tgt-row.sl .val { color: var(--trend-down); }
+  .tgt-row.t1 .val { color: var(--accent); }
+  .tgt-row.t2 .val { color: var(--trend-up); }
+  .tgt-row.t3 .val { color: var(--purple); font-weight: 600; }
+
+  /* MATRIX METRIC */
+  .metric-row { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 11.5px; }
+  .metric-row span b { color: var(--text-primary); font-weight: 600; margin-left: 4px; }
+  .metric-row span { color: var(--text-muted); }
+
+  .empty-state { padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .empty-state .ico { font-size: 32px; margin-bottom: 10px; opacity: 0.4; }
+
+  /* table-scroll */
+  .table-wrap { overflow-x: auto; }
+
+  /* footer note */
+  .footer-note { text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px; letter-spacing: 0.6px; }
+
+  /* NAV refresh spinner */
+  .nav-input-wrap { position: relative; }
+  .nav-input-wrap input { padding-right: 34px; }
+  .nav-spinner {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--border-strong); border-top-color: var(--accent);
+    animation: navspin 0.7s linear infinite; display: none;
+  }
+  .nav-input-wrap.loading .nav-spinner { display: block; }
+  .nav-input-wrap.loading input { color: var(--text-muted); }
+  @keyframes navspin { to { transform: translateY(-50%) rotate(360deg); } }
+  .btn[disabled], .btn.is-disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-logo">Q</div>
+    <div class="brand-text">
+      <h1>QUANTUM MF TERMINAL</h1>
+      <p>POWERED BY SETHU · INSTITUTIONAL INDIAN MF ANALYTICS</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="market-tag"><span class="live-dot"></span>AMFI LIVE NAV FEED</div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<nav class="tabs-bar">
+  <button class="tab-btn active" data-tab="matrix">Institutional Matrix <span class="tab-badge" id="badgeMatrix">10</span></button>
+  <button class="tab-btn" data-tab="sandbox">Sandbox Algo Testing <span class="tab-badge" id="badgeSandbox">0</span></button>
+  <button class="tab-btn" data-tab="portfolio">Live Portfolio Dispatch <span class="tab-badge" id="badgePortfolio">0</span></button>
+</nav>
+
+<main>
+
+  <!-- TAB 1: MATRIX -->
+  <section class="tab-panel active" id="tab-matrix">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Virtual Top 10 Institutional Matrix</div>
+        <div class="panel-sub">Quant-screened · ≥12% absolute annual returns sustained 3–5Y · Multi-factor structural rating</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="rerunScreener()">⟳ Re-run Screener</button>
+        <button class="btn primary" onclick="addAllToSandbox()">+ Stage All to Sandbox</button>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <div class="panel-card-head">
+        <div class="panel-card-title">Curated Equity Mutual Fund Universe</div>
+        <div class="mono" style="font-size:11px;color:var(--text-muted)">Last refresh: <span id="matrixRefresh">--</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Scheme / Category</th>
+              <th>Consecutive Annual Returns (≥12%)</th>
+              <th>Fundamentals</th>
+              <th>Technicals</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: SANDBOX -->
+  <section class="tab-panel" id="tab-sandbox">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Sandbox Algorithmic Testing</div>
+        <div class="panel-sub">Paper-trade modeling · Live target & risk engine · Realized + Unrealized ledger</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="simulateMovement('sandbox')">⟳ Refresh Live NAV</button>
+        <button class="btn primary" onclick="openSandboxModal()">+ Log Sandbox Trade</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="sandboxKpis"></div>
+
+    <div class="panel-card">
+      <div class="panel-card-head">
+        <div class="panel-card-title">Active Sandbox Positions</div>
+        <div class="mono" style="font-size:11px;color:var(--text-muted)">Engine: <span style="color:var(--accent)">Q-Signal v3.2</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Scheme</th>
+              <th>Entry Date</th>
+              <th>Qty</th>
+              <th>Entry NAV</th>
+              <th>Current NAV</th>
+              <th>Invested</th>
+              <th>Current Value</th>
+              <th>P&amp;L</th>
+              <th>Targets / SL</th>
+              <th>Signal</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sandboxBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <div class="panel-card-head">
+        <div class="panel-card-title">Realized Ledger</div>
+        <div class="mono" style="font-size:11px;color:var(--text-muted)">Closed positions</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Scheme</th><th>Entry → Exit</th><th>Qty</th><th>Entry NAV</th><th>Exit NAV</th><th>Realized P&amp;L</th><th>Return %</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: PORTFOLIO -->
+  <section class="tab-panel" id="tab-portfolio">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Live Portfolio Dispatch</div>
+        <div class="panel-sub">Real capital exposure · AI Composite Sentiment · Trailing risk envelope</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="simulateMovement('portfolio')">⟳ Refresh Live NAV</button>
+        <button class="btn primary" onclick="openPortfolioModal()">+ Log Live Holding</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="portfolioKpis"></div>
+
+    <div class="panel-card">
+      <div class="panel-card-head">
+        <div class="panel-card-title">Committed Holdings · AI Composite Sentiment Matrix</div>
+        <div class="mono" style="font-size:11px;color:var(--text-muted)">Last AI sweep: <span id="aiSweep">--</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Scheme</th>
+              <th>Inv. Date</th>
+              <th>Avg NAV</th>
+              <th>Qty</th>
+              <th>Live NAV</th>
+              <th>Valuation</th>
+              <th>AI Score</th>
+              <th>Targets / Trail SL</th>
+              <th>P&amp;L</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODALS -->
+<div class="modal-backdrop" id="sandboxModal">
+  <div class="modal">
+    <h3>Log Sandbox Trade</h3>
+    <p class="sub">Paper-trade simulation — does not affect live portfolio.</p>
+    <div class="form-row"><label>Scheme</label>
+      <select id="sbScheme"></select>
+    </div>
+    <div class="form-row"><label>Investment Date</label><input type="date" id="sbDate"></div>
+    <div class="form-row"><label>Quantity (Units)</label><input type="number" id="sbQty" min="0.01" step="0.01" value="100"></div>
+    <div class="form-row"><label>Entry NAV Price (₹)</label><div class="nav-input-wrap" id="sbNavWrap"><input type="number" id="sbNav" min="0.01" step="0.01"><span class="nav-spinner" aria-hidden="true"></span></div></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('sandboxModal')">Cancel</button>
+      <button class="btn primary" id="sbSubmitBtn" onclick="submitSandboxTrade()">Log Trade</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="portfolioModal">
+  <div class="modal">
+    <h3>Log Live Holding</h3>
+    <p class="sub">Real capital — affects committed portfolio dispatch.</p>
+    <div class="form-row"><label>Scheme</label>
+      <select id="pfScheme"></select>
+    </div>
+    <div class="form-row"><label>Investment Date</label><input type="date" id="pfDate"></div>
+    <div class="form-row"><label>Total Quantity (Units)</label><input type="number" id="pfQty" min="0.01" step="0.01" value="250"></div>
+    <div class="form-row"><label>Average Accumulation NAV (₹)</label><div class="nav-input-wrap" id="pfNavWrap"><input type="number" id="pfNav" min="0.01" step="0.01"><span class="nav-spinner" aria-hidden="true"></span></div></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('portfolioModal')">Cancel</button>
+      <button class="btn primary" id="pfSubmitBtn" onclick="submitPortfolio()">Commit Holding</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="sellModal">
+  <div class="modal">
+    <h3>Liquidate Sandbox Position</h3>
+    <p class="sub">Lock in current NAV. Position moves to Realized Ledger.</p>
+    <div class="form-row"><label>Scheme</label><input id="sellScheme" disabled></div>
+    <div class="form-row"><label>Quantity</label><input id="sellQty" disabled></div>
+    <div class="form-row"><label>Exit NAV (₹)</label><input type="number" id="sellNav" step="0.01"></div>
+    <div class="form-row"><label>Realized P&amp;L Preview</label><input id="sellPnl" disabled></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('sellModal')">Cancel</button>
+      <button class="btn success" onclick="confirmSell()">Confirm Liquidation</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<div class="footer-note">QUANTUM MF TERMINAL · v1.0 · Live NAVs via AMFI (mfapi.in) · Powered by Sethu · Not investment advice</div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+const STORAGE_KEY = 'quantum_mf_state_v1';
+
+const SEED_SCHEMES = [
+  { id:'pp_flexi', code:'122639', name:'Parag Parikh Flexi Cap Fund', amc:'PPFAS', category:'Flexi Cap', nav: 78.42, returns:[24.6,18.3,15.7,21.2,14.1], expense:0.63, aum:71240, exitLoad:'1% < 365d', sharpe:1.42, sortino:1.88, alpha:4.8, beta:0.82, stdDev:13.2, ema200:3.4 },
+  { id:'sbi_smallcap', code:'125497', name:'SBI Small Cap Fund', amc:'SBI', category:'Small Cap', nav: 168.91, returns:[32.8,21.4,17.9,29.6,12.4], expense:0.69, aum:32890, exitLoad:'1% < 365d', sharpe:1.55, sortino:2.10, alpha:6.2, beta:0.91, stdDev:18.7, ema200:5.7 },
+  { id:'nippon_smallcap', code:'113177', name:'Nippon India Small Cap Fund', amc:'Nippon', category:'Small Cap', nav: 198.34, returns:[36.4,25.7,19.2,33.1,13.8], expense:0.66, aum:62410, exitLoad:'1% < 365d', sharpe:1.61, sortino:2.18, alpha:7.1, beta:0.95, stdDev:19.4, ema200:6.9 },
+  { id:'hdfc_midcap', code:'118989', name:'HDFC Mid-Cap Opportunities Fund', amc:'HDFC', category:'Mid Cap', nav: 174.62, returns:[28.4,19.6,16.4,24.8,14.7], expense:0.81, aum:78420, exitLoad:'1% < 365d', sharpe:1.48, sortino:1.97, alpha:5.4, beta:0.88, stdDev:15.6, ema200:4.2 },
+  { id:'icici_bluechip', code:'120586', name:'ICICI Pru Bluechip Fund', amc:'ICICI', category:'Large Cap', nav: 102.18, returns:[22.1,15.4,13.2,18.7,12.9], expense:0.91, aum:64320, exitLoad:'1% < 365d', sharpe:1.28, sortino:1.62, alpha:3.6, beta:0.92, stdDev:12.4, ema200:2.8 },
+  { id:'mirae_largecap', code:'118834', name:'Mirae Asset Large Cap Fund', amc:'Mirae', category:'Large Cap', nav: 109.74, returns:[20.8,14.2,12.8,17.6,12.1], expense:0.54, aum:38470, exitLoad:'1% < 365d', sharpe:1.31, sortino:1.71, alpha:3.8, beta:0.90, stdDev:12.1, ema200:3.1 },
+  { id:'kotak_emerging', code:'112090', name:'Kotak Emerging Equity Fund', amc:'Kotak', category:'Mid Cap', nav: 132.55, returns:[27.6,18.8,15.9,25.4,13.6], expense:0.62, aum:45680, exitLoad:'1% < 365d', sharpe:1.46, sortino:1.92, alpha:5.1, beta:0.87, stdDev:15.2, ema200:4.6 },
+  { id:'axis_smallcap', code:'130503', name:'Axis Small Cap Fund', amc:'Axis', category:'Small Cap', nav: 117.83, returns:[29.7,20.6,17.4,26.8,12.7], expense:0.58, aum:21340, exitLoad:'1% < 365d', sharpe:1.52, sortino:2.04, alpha:5.9, beta:0.86, stdDev:17.8, ema200:5.1 },
+  { id:'quant_active', code:'120823', name:'Quant Active Fund', amc:'Quant', category:'Multi Cap', nav: 671.42, returns:[34.2,22.8,18.6,30.4,15.8], expense:0.77, aum:11240, exitLoad:'1% < 365d', sharpe:1.58, sortino:2.14, alpha:6.7, beta:0.94, stdDev:18.1, ema200:6.3 },
+  { id:'canara_flexi', code:'118560', name:'Canara Robeco Flexi Cap Fund', amc:'Canara', category:'Flexi Cap', nav: 312.78, returns:[23.4,16.9,14.5,19.8,13.2], expense:0.59, aum:13680, exitLoad:'1% < 365d', sharpe:1.36, sortino:1.78, alpha:4.2, beta:0.84, stdDev:13.8, ema200:3.7 }
+];
+
+let state = {
+  schemes: SEED_SCHEMES.map(s => ({...s})),
+  sandbox: [],
+  ledger: [],
+  portfolio: []
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      // Merge SEED schemes (so newly added fields like `code` exist on returning users)
+      const merged = SEED_SCHEMES.map(seed => {
+        const stored = (p.schemes||[]).find(x=>x.id===seed.id);
+        return stored ? {...seed, ...stored, code: seed.code} : {...seed};
+      });
+      state = {
+        schemes: merged,
+        sandbox: p.sandbox || [],
+        ledger: p.ledger || [],
+        portfolio: p.portfolio || []
+      };
+    } else {
+      seedDemoData();
+    }
+  } catch(e) { seedDemoData(); }
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function seedDemoData() {
+  const today = new Date();
+  const d = (offset) => { const x = new Date(today); x.setDate(x.getDate()-offset); return x.toISOString().slice(0,10); };
+  state.sandbox = [
+    { id: uid(), schemeId:'pp_flexi', date:d(45), qty:150, entryNav:72.10 },
+    { id: uid(), schemeId:'nippon_smallcap', date:d(30), qty:80, entryNav:185.20 },
+    { id: uid(), schemeId:'icici_bluechip', date:d(12), qty:200, entryNav:104.30 }
+  ];
+  state.ledger = [
+    { id: uid(), schemeId:'mirae_largecap', entryDate:d(120), exitDate:d(10), qty:100, entryNav:92.40, exitNav:108.70 }
+  ];
+  state.portfolio = [
+    { id: uid(), schemeId:'hdfc_midcap', date:d(180), qty:300, avgNav:152.40 },
+    { id: uid(), schemeId:'sbi_smallcap', date:d(95), qty:150, avgNav:148.20 },
+    { id: uid(), schemeId:'quant_active', date:d(220), qty:50, avgNav:580.10 }
+  ];
+}
+
+function uid() { return Math.random().toString(36).slice(2,10); }
+function inr(n) { return '₹' + Number(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function inrShort(n) {
+  const a = Math.abs(n);
+  if (a >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+  if (a >= 100000) return '₹' + (n/100000).toFixed(2) + ' L';
+  return inr(n);
+}
+function pct(n) { return (n>=0?'+':'') + Number(n).toFixed(2) + '%'; }
+function findScheme(id) { return state.schemes.find(s=>s.id===id); }
+
+/* ============================================================
+   TABS
+============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   TOASTS
+============================================================ */
+function toast(title, msg, type='info') {
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<div class="toast-title">${title}</div><div class="toast-msg">${msg}</div>`;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity 0.3s, transform 0.3s'; el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(),300); }, 3600);
+}
+
+/* ============================================================
+   CLOCK
+============================================================ */
+function tickClock() {
+  const d = new Date();
+  document.getElementById('clock').textContent =
+    d.toLocaleTimeString('en-IN', {hour12:false}) + ' IST';
+}
+setInterval(tickClock, 1000); tickClock();
+
+/* ============================================================
+   TAB 1: MATRIX
+============================================================ */
+function renderMatrix() {
+  const tbody = document.getElementById('matrixBody');
+  tbody.innerHTML = state.schemes.map(s => {
+    const maxR = Math.max(...s.returns);
+    const bars = s.returns.map((r,i) => {
+      const h = Math.max(8, (r/maxR)*28);
+      const color = r>=20 ? 'var(--trend-up)' : r>=15 ? 'var(--accent)' : 'var(--warning)';
+      const yr = new Date().getFullYear() - (s.returns.length - 1 - i);
+      return `<div class="perf-bar" style="height:${h}px;background:${color}" title="${yr}: ${r}%">${r.toFixed(0)}</div>`;
+    }).join('');
+    return `
+      <tr>
+        <td>
+          <span class="fund-name">${s.name}<span class="amc-tag">${s.amc}</span></span>
+          <span class="fund-category">${s.category}</span>
+          <span class="mono" style="margin-left:8px;font-size:11px;color:var(--text-muted)">NAV ₹${s.nav.toFixed(2)}</span>
+        </td>
+        <td>
+          <div class="perf-track">${bars}</div>
+          <div class="mono" style="font-size:10.5px;color:var(--text-muted);margin-top:4px">${s.returns.length}Y consec · avg ${(s.returns.reduce((a,b)=>a+b,0)/s.returns.length).toFixed(1)}%</div>
+        </td>
+        <td>
+          <div class="metric-row">
+            <span>Exp<b>${s.expense}%</b></span>
+            <span>AUM<b>${inrShort(s.aum*10000000).replace('₹','₹')}</b></span>
+            <span>Exit<b>${s.exitLoad}</b></span>
+          </div>
+          <div class="metric-row" style="margin-top:4px">
+            <span>Sharpe<b>${s.sharpe}</b></span>
+            <span>Sortino<b>${s.sortino}</b></span>
+          </div>
+        </td>
+        <td>
+          <div class="metric-row">
+            <span>α<b>${s.alpha}</b></span>
+            <span>β<b>${s.beta}</b></span>
+            <span>σ<b>${s.stdDev}</b></span>
+          </div>
+          <div class="metric-row" style="margin-top:4px">
+            <span>200-EMA Δ<b style="color:var(--trend-up)">+${s.ema200}%</b></span>
+          </div>
+        </td>
+        <td style="text-align:right">
+          <div class="btn-row" style="justify-content:flex-end">
+            <button class="btn sm" onclick="stageToSandbox('${s.id}')">+ Sandbox</button>
+            <button class="btn sm primary" onclick="stageToPortfolio('${s.id}')">+ Holding</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+  document.getElementById('matrixRefresh').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false});
+  document.getElementById('badgeMatrix').textContent = state.schemes.length;
+}
+
+function rerunScreener() {
+  fetchLiveNavs(false);
+  toast('Screener Refreshing', 'Pulling live AMFI NAVs · Quant model re-evaluating.', 'info');
+}
+function stageToSandbox(schemeId) {
+  const s = findScheme(schemeId);
+  openSandboxModal(schemeId, s.nav);
+}
+function stageToPortfolio(schemeId) {
+  const s = findScheme(schemeId);
+  openPortfolioModal(schemeId, s.nav);
+}
+function addAllToSandbox() {
+  const today = new Date().toISOString().slice(0,10);
+  state.schemes.forEach(s => {
+    if (!state.sandbox.some(t => t.schemeId===s.id)) {
+      state.sandbox.push({ id: uid(), schemeId: s.id, date: today, qty: 100, entryNav: s.nav });
+    }
+  });
+  saveState(); renderAll();
+  toast('Bulk Stage Complete', 'All matrix schemes added to Sandbox (qty 100 default).', 'success');
+}
+
+/* ============================================================
+   TAB 2: SANDBOX
+============================================================ */
+function computeSignal(entry, current) {
+  const change = (current - entry) / entry * 100;
+  if (change <= -8) return {label:'STOP LOSS HIT', cls:'sl'};
+  if (change >= 35) return {label:'TAKE PROFIT T3', cls:'sell'};
+  if (change >= 20) return {label:'TAKE PROFIT T2', cls:'sell'};
+  if (change <= -4) return {label:'BUY MORE', cls:'buy'};
+  if (change >= 8) return {label:'HOLD · NEAR T1', cls:'hold'};
+  return {label:'HOLD', cls:'hold'};
+}
+
+function renderSandbox() {
+  const tbody = document.getElementById('sandboxBody');
+  if (!state.sandbox.length) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="ico">⊘</div>No active sandbox positions. Click <b>+ Log Sandbox Trade</b> to begin.</div></td></tr>`;
+  } else {
+    tbody.innerHTML = state.sandbox.map(t => {
+      const s = findScheme(t.schemeId); if(!s) return '';
+      const invested = t.qty * t.entryNav;
+      const current = t.qty * s.nav;
+      const pnl = current - invested;
+      const pnlPct = (pnl/invested)*100;
+      const sig = computeSignal(t.entryNav, s.nav);
+      const t1 = t.entryNav * 1.10, t2 = t.entryNav * 1.20, t3 = t.entryNav * 1.35, sl = t.entryNav * 0.92;
+      return `
+      <tr>
+        <td>
+          <span class="fund-name">${s.name}</span>
+          <span class="fund-category">${s.category}</span>
+        </td>
+        <td><input class="qty-input" type="date" value="${t.date}" onchange="updatePosDate('sandbox','${t.id}', this.value)" style="min-width:140px"></td>
+        <td><input class="qty-input" type="number" min="0.01" step="0.01" value="${t.qty}" onchange="updateSandboxQty('${t.id}', this.value)"></td>
+        <td class="num">${inr(t.entryNav)}</td>
+        <td class="num">${inr(s.nav)}</td>
+        <td class="num">${inr(invested)}</td>
+        <td class="num">${inr(current)}</td>
+        <td class="num ${pnl>=0?'up':'down'}">${inr(pnl)}<br><span style="font-size:10.5px">${pct(pnlPct)}</span></td>
+        <td>
+          <div class="targets-cell">
+            <div class="tgt-row t1"><span class="lbl">T1</span><span class="val">${inr(t1)}</span></div>
+            <div class="tgt-row t2"><span class="lbl">T2</span><span class="val">${inr(t2)}</span></div>
+            <div class="tgt-row t3"><span class="lbl">T3</span><span class="val">${inr(t3)}</span></div>
+            <div class="tgt-row sl"><span class="lbl">SL</span><span class="val">${inr(sl)}</span></div>
+          </div>
+        </td>
+        <td><span class="badge ${sig.cls}">${sig.label}</span></td>
+        <td style="text-align:right">
+          <div class="btn-row" style="justify-content:flex-end">
+            <button class="btn sm success" onclick="openSellModal('${t.id}')">Sell</button>
+            <button class="btn sm danger" onclick="removeSandbox('${t.id}')">Remove</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('badgeSandbox').textContent = state.sandbox.length;
+  renderSandboxKpis();
+  renderLedger();
+}
+
+function renderSandboxKpis() {
+  let invested = 0, current = 0;
+  state.sandbox.forEach(t => {
+    const s = findScheme(t.schemeId); if(!s) return;
+    invested += t.qty * t.entryNav;
+    current += t.qty * s.nav;
+  });
+  const unreal = current - invested;
+  const unrealPct = invested ? (unreal/invested*100) : 0;
+  const realized = state.ledger.reduce((sum,l)=> sum + (l.exitNav - l.entryNav)*l.qty, 0);
+  const realizedBase = state.ledger.reduce((sum,l)=> sum + l.entryNav*l.qty, 0);
+  const realizedPct = realizedBase ? (realized/realizedBase*100) : 0;
+  const net = unreal + realized;
+  const netBase = invested + realizedBase;
+  const netPct = netBase ? (net/netBase*100) : 0;
+
+  document.getElementById('sandboxKpis').innerHTML = `
+    <div class="kpi ${realized>=0?'up':'down'}">
+      <div class="kpi-label">Realized P&amp;L</div>
+      <div class="kpi-value ${realized>=0?'num up':'num down'}">${inr(realized)}</div>
+      <div class="kpi-sub ${realized>=0?'up':'down'}">${pct(realizedPct)} · ${state.ledger.length} closed</div>
+    </div>
+    <div class="kpi ${unreal>=0?'up':'down'}">
+      <div class="kpi-label">Unrealized P&amp;L</div>
+      <div class="kpi-value ${unreal>=0?'num up':'num down'}">${inr(unreal)}</div>
+      <div class="kpi-sub ${unreal>=0?'up':'down'}">${pct(unrealPct)} · ${state.sandbox.length} open</div>
+    </div>
+    <div class="kpi ${net>=0?'up':'down'}">
+      <div class="kpi-label">Total Net P&amp;L</div>
+      <div class="kpi-value ${net>=0?'num up':'num down'}">${inr(net)}</div>
+      <div class="kpi-sub ${net>=0?'up':'down'}">${pct(netPct)} composite return</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Capital Deployed</div>
+      <div class="kpi-value num">${inrShort(invested)}</div>
+      <div class="kpi-sub">Current MV ${inrShort(current)}</div>
+    </div>`;
+}
+
+function renderLedger() {
+  const tbody = document.getElementById('ledgerBody');
+  if (!state.ledger.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:30px">No realized trades yet.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = state.ledger.map(l => {
+    const s = findScheme(l.schemeId);
+    const pnl = (l.exitNav - l.entryNav)*l.qty;
+    const ret = (l.exitNav - l.entryNav)/l.entryNav*100;
+    return `<tr>
+      <td><span class="fund-name">${s?s.name:'(removed)'}</span></td>
+      <td class="mono" style="color:var(--text-secondary)">${l.entryDate} → ${l.exitDate}</td>
+      <td class="num">${l.qty}</td>
+      <td class="num">${inr(l.entryNav)}</td>
+      <td class="num">${inr(l.exitNav)}</td>
+      <td class="num ${pnl>=0?'up':'down'}">${inr(pnl)}</td>
+      <td class="num ${ret>=0?'up':'down'}">${pct(ret)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSandboxQty(id, val) {
+  const t = state.sandbox.find(x=>x.id===id);
+  if (!t) return;
+  const q = parseFloat(val);
+  if (!q || q<=0) { toast('Invalid Quantity','Must be a positive number.','warning'); renderSandbox(); return; }
+  t.qty = q; saveState(); renderSandbox();
+}
+
+function removeSandbox(id) {
+  state.sandbox = state.sandbox.filter(t=>t.id!==id); saveState(); renderSandbox();
+  toast('Position Removed','Cleared from workspace · not counted toward history.','info');
+}
+
+let pendingSell = null;
+function openSellModal(id) {
+  const t = state.sandbox.find(x=>x.id===id); if(!t) return;
+  const s = findScheme(t.schemeId);
+  pendingSell = id;
+  document.getElementById('sellScheme').value = s.name;
+  document.getElementById('sellQty').value = t.qty;
+  document.getElementById('sellNav').value = s.nav.toFixed(2);
+  updateSellPreview();
+  document.getElementById('sellNav').oninput = updateSellPreview;
+  document.getElementById('sellModal').classList.add('open');
+}
+function updateSellPreview() {
+  const t = state.sandbox.find(x=>x.id===pendingSell); if(!t) return;
+  const exit = parseFloat(document.getElementById('sellNav').value)||0;
+  const pnl = (exit - t.entryNav) * t.qty;
+  document.getElementById('sellPnl').value = inr(pnl) + ' (' + pct((exit-t.entryNav)/t.entryNav*100) + ')';
+}
+function confirmSell() {
+  const t = state.sandbox.find(x=>x.id===pendingSell); if(!t) return;
+  const exit = parseFloat(document.getElementById('sellNav').value);
+  if (!exit || exit<=0) { toast('Invalid Exit NAV','Enter a valid NAV.','warning'); return; }
+  state.ledger.unshift({
+    id: uid(), schemeId: t.schemeId, entryDate: t.date,
+    exitDate: new Date().toISOString().slice(0,10),
+    qty: t.qty, entryNav: t.entryNav, exitNav: exit
+  });
+  state.sandbox = state.sandbox.filter(x=>x.id!==t.id);
+  saveState(); renderSandbox(); closeModal('sellModal');
+  const pnl = (exit-t.entryNav)*t.qty;
+  toast('Position Liquidated', `Realized ${inr(pnl)} · Logged to ledger.`, pnl>=0?'success':'warning');
+}
+
+/* MODAL HELPERS */
+function fillSchemeSelect(selectId, presetId) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = state.schemes.map(s => `<option value="${s.id}" ${presetId===s.id?'selected':''}>${s.name} · ${s.category}</option>`).join('');
+}
+
+async function fetchNavOnDate(schemeCode, dateStr) {
+  // dateStr is YYYY-MM-DD; mfapi.in returns history with dd-mm-yyyy
+  try {
+    const r = await fetch(`https://api.mfapi.in/mf/${schemeCode}`);
+    const j = await r.json();
+    if (!j || !j.data || !j.data.length) return null;
+    const [y,m,d] = dateStr.split('-');
+    const target = new Date(`${y}-${m}-${d}`).getTime();
+    // data is newest-first; find entry on or before target date
+    let match = null;
+    for (const row of j.data) {
+      const [dd,mm,yy] = row.date.split('-');
+      const t = new Date(`${yy}-${mm}-${dd}`).getTime();
+      if (t <= target) { match = row; break; }
+    }
+    if (!match) match = j.data[j.data.length - 1];
+    return parseFloat(match.nav);
+  } catch(e) { console.error('NAV fetch failed', e); return null; }
+}
+async function updateNavForDate(schemeSelId, dateInpId, navInpId, wrapId, submitBtnId) {
+  const schemeId = document.getElementById(schemeSelId).value;
+  const date = document.getElementById(dateInpId).value;
+  if (!schemeId || !date) return;
+  const sc = findScheme(schemeId); if (!sc) return;
+  const navInp = document.getElementById(navInpId);
+  const wrap = wrapId && document.getElementById(wrapId);
+  const submitBtn = submitBtnId && document.getElementById(submitBtnId);
+  const prev = navInp.value;
+  // mark loading
+  navInp.dataset.loading = '1';
+  navInp.disabled = true;
+  if (wrap) wrap.classList.add('loading');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('is-disabled'); }
+  navInp.value = '';
+  navInp.placeholder = 'Fetching NAV…';
+  try {
+    const nav = await fetchNavOnDate(sc.code, date);
+    if (nav && nav > 0) {
+      navInp.value = nav.toFixed(2);
+      navInp.dispatchEvent(new Event('input', { bubbles: true }));
+    } else {
+      navInp.value = prev || sc.nav.toFixed(2);
+      toast('NAV Unavailable', 'No historical NAV found for selected date. Using fallback.', 'warning');
+    }
+  } finally {
+    navInp.disabled = false;
+    delete navInp.dataset.loading;
+    navInp.placeholder = '';
+    if (wrap) wrap.classList.remove('loading');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('is-disabled'); }
+  }
+}
+
+function openSandboxModal(presetId, presetNav) {
+  fillSchemeSelect('sbScheme', presetId);
+  document.getElementById('sbDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('sbQty').value = 100;
+  const s = findScheme(presetId || state.schemes[0].id);
+  document.getElementById('sbNav').value = (presetNav || s.nav).toFixed(2);
+  document.getElementById('sbScheme').onchange = () => {
+    updateNavForDate('sbScheme','sbDate','sbNav','sbNavWrap','sbSubmitBtn');
+  };
+  document.getElementById('sbDate').onchange = () => {
+    updateNavForDate('sbScheme','sbDate','sbNav','sbNavWrap','sbSubmitBtn');
+  };
+  document.getElementById('sandboxModal').classList.add('open');
+}
+function submitSandboxTrade() {
+  if (document.getElementById('sbNav').dataset.loading) { toast('NAV Loading','Wait for NAV refresh to complete.','warning'); return; }
+  const schemeId = document.getElementById('sbScheme').value;
+  const date = document.getElementById('sbDate').value;
+  const qty = parseFloat(document.getElementById('sbQty').value);
+  const nav = parseFloat(document.getElementById('sbNav').value);
+  if (!schemeId || !date || !qty || !nav || qty<=0 || nav<=0) { toast('Validation Error','Fill all fields with valid values.','warning'); return; }
+  state.sandbox.push({ id: uid(), schemeId, date, qty, entryNav: nav });
+  saveState(); renderSandbox(); closeModal('sandboxModal');
+  toast('Sandbox Trade Logged', `${findScheme(schemeId).name} · ${qty} units @ ${inr(nav)}`, 'success');
+  document.querySelector('[data-tab="sandbox"]').click();
+}
+
+function openPortfolioModal(presetId, presetNav) {
+  fillSchemeSelect('pfScheme', presetId);
+  document.getElementById('pfDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('pfQty').value = 250;
+  const s = findScheme(presetId || state.schemes[0].id);
+  document.getElementById('pfNav').value = (presetNav || s.nav).toFixed(2);
+  document.getElementById('pfScheme').onchange = () => {
+    updateNavForDate('pfScheme','pfDate','pfNav','pfNavWrap','pfSubmitBtn');
+  };
+  document.getElementById('pfDate').onchange = () => {
+    updateNavForDate('pfScheme','pfDate','pfNav','pfNavWrap','pfSubmitBtn');
+  };
+  document.getElementById('portfolioModal').classList.add('open');
+}
+function submitPortfolio() {
+  if (document.getElementById('pfNav').dataset.loading) { toast('NAV Loading','Wait for NAV refresh to complete.','warning'); return; }
+  const schemeId = document.getElementById('pfScheme').value;
+  const date = document.getElementById('pfDate').value;
+  const qty = parseFloat(document.getElementById('pfQty').value);
+  const nav = parseFloat(document.getElementById('pfNav').value);
+  if (!schemeId || !date || !qty || !nav || qty<=0 || nav<=0) { toast('Validation Error','Fill all fields with valid values.','warning'); return; }
+  state.portfolio.push({ id: uid(), schemeId, date, qty, avgNav: nav });
+  saveState(); renderPortfolio(); closeModal('portfolioModal');
+  toast('Holding Committed', `${findScheme(schemeId).name} added to live portfolio.`, 'success');
+  document.querySelector('[data-tab="portfolio"]').click();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if(e.target===b) b.classList.remove('open'); }));
+
+/* ============================================================
+   TAB 3: PORTFOLIO
+============================================================ */
+function computeAiScore(scheme, holding) {
+  // composite: alpha + sharpe momentum + macro tilt + inflow proxy (AUM tier)
+  const alphaScore = Math.min(100, scheme.alpha*10 + 30);
+  const sharpScore = Math.min(100, scheme.sharpe*40 + 20);
+  const macroScore = 50 + scheme.ema200*4;
+  const inflow = Math.min(100, 40 + Math.log10(scheme.aum)*8);
+  const score = Math.round(0.30*alphaScore + 0.25*sharpScore + 0.25*macroScore + 0.20*inflow);
+  return Math.max(0, Math.min(100, score));
+}
+function aiBucket(score) {
+  if (score >= 70) return {color:'var(--trend-up)', label:'HIGH'};
+  if (score >= 50) return {color:'var(--warning)', label:'NEUTRAL'};
+  return {color:'var(--trend-down)', label:'VULNERABLE'};
+}
+
+function renderPortfolio() {
+  const tbody = document.getElementById('portfolioBody');
+  if (!state.portfolio.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="ico">⊘</div>No live holdings. Use <b>+ Log Live Holding</b> to dispatch.</div></td></tr>`;
+  } else {
+    tbody.innerHTML = state.portfolio.map(p => {
+      const s = findScheme(p.schemeId); if(!s) return '';
+      const valuation = p.qty * s.nav;
+      const invested = p.qty * p.avgNav;
+      const pnl = valuation - invested;
+      const pnlPct = pnl/invested*100;
+      const ai = computeAiScore(s, p);
+      const aib = aiBucket(ai);
+      const t1 = p.avgNav * 1.12, t2 = p.avgNav * 1.25, t3 = p.avgNav * 1.45;
+      const peakAssumed = Math.max(s.nav, p.avgNav*1.05);
+      const trailSL = (peakAssumed * 0.92);
+      return `
+      <tr>
+        <td>
+          <span class="fund-name">${s.name}</span>
+          <span class="fund-category">${s.category}</span>
+        </td>
+        <td><input class="qty-input" type="date" value="${p.date}" onchange="updatePosDate('portfolio','${p.id}', this.value)" style="min-width:140px"></td>
+        <td class="num">${inr(p.avgNav)}</td>
+        <td class="num">${p.qty}</td>
+        <td class="num">${inr(s.nav)}</td>
+        <td class="num">${inr(valuation)}</td>
+        <td>
+          <div class="ai-score">
+            <div class="ai-bar"><div class="ai-bar-fill" style="width:${ai}%;background:${aib.color}"></div></div>
+            <div class="ai-num" style="color:${aib.color}">${ai}</div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);text-align:right;margin-top:3px;letter-spacing:0.5px">${aib.label}</div>
+        </td>
+        <td>
+          <div class="targets-cell">
+            <div class="tgt-row t1"><span class="lbl">T1</span><span class="val">${inr(t1)}</span></div>
+            <div class="tgt-row t2"><span class="lbl">T2</span><span class="val">${inr(t2)}</span></div>
+            <div class="tgt-row t3"><span class="lbl">T3</span><span class="val">${inr(t3)}</span></div>
+            <div class="tgt-row sl"><span class="lbl">TSL</span><span class="val">${inr(trailSL)}</span></div>
+          </div>
+        </td>
+        <td class="num ${pnl>=0?'up':'down'}">${inr(pnl)}<br><span style="font-size:10.5px">${pct(pnlPct)}</span></td>
+        <td style="text-align:right">
+          <div class="btn-row" style="justify-content:flex-end">
+            <button class="btn sm danger" onclick="removePortfolio('${p.id}')">Exit</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('badgePortfolio').textContent = state.portfolio.length;
+  renderPortfolioKpis();
+  document.getElementById('aiSweep').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false});
+}
+
+function renderPortfolioKpis() {
+  let invested = 0, valuation = 0, weightedAi = 0;
+  state.portfolio.forEach(p => {
+    const s = findScheme(p.schemeId); if(!s) return;
+    invested += p.qty * p.avgNav;
+    valuation += p.qty * s.nav;
+    weightedAi += computeAiScore(s,p) * (p.qty * s.nav);
+  });
+  const pnl = valuation - invested;
+  const pnlPct = invested ? (pnl/invested*100) : 0;
+  const portAi = valuation ? Math.round(weightedAi / valuation) : 0;
+  const aib = aiBucket(portAi);
+  document.getElementById('portfolioKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">NAV Portfolio Balance</div>
+      <div class="kpi-value num">${inrShort(valuation)}</div>
+      <div class="kpi-sub">${state.portfolio.length} active holdings</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Capital Deployed</div>
+      <div class="kpi-value num">${inrShort(invested)}</div>
+      <div class="kpi-sub">vs MV ${inrShort(valuation)}</div>
+    </div>
+    <div class="kpi ${pnl>=0?'up':'down'}">
+      <div class="kpi-label">Unrealized P&amp;L</div>
+      <div class="kpi-value ${pnl>=0?'num up':'num down'}">${inr(pnl)}</div>
+      <div class="kpi-sub ${pnl>=0?'up':'down'}">${pct(pnlPct)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Weighted AI Score</div>
+      <div class="kpi-value num" style="color:${aib.color}">${portAi}<span style="font-size:13px;color:var(--text-muted)"> / 100</span></div>
+      <div class="kpi-sub" style="color:${aib.color}">${aib.label} POSTURE</div>
+    </div>`;
+}
+function removePortfolio(id) {
+  state.portfolio = state.portfolio.filter(p=>p.id!==id); saveState(); renderPortfolio();
+  toast('Holding Exited','Live position removed from dispatch.','info');
+}
+
+/* ============================================================
+   GLOBAL · LIVE NAV (mfapi.in — AMFI feed)
+============================================================ */
+async function fetchLiveNavs(silent) {
+  let ok = 0, fail = 0;
+  await Promise.all(state.schemes.map(async s => {
+    if (!s.code) return;
+    try {
+      const r = await fetch(`https://api.mfapi.in/mf/${s.code}/latest`);
+      const j = await r.json();
+      const nav = parseFloat(j?.data?.[0]?.nav);
+      if (nav && nav > 0) {
+        s.nav = +nav.toFixed(4);
+        s.navDate = j.data[0].date;
+        s.liveName = j.meta?.scheme_name || s.name;
+        ok++;
+      } else fail++;
+    } catch(e) { fail++; }
+  }));
+  saveState(); renderAll();
+  if (!silent) toast('Live NAV Synced', `AMFI feed · ${ok} updated · ${fail} fallback`, ok ? 'success' : 'warning');
+}
+
+// Replaces the old simulator — now pulls real-time NAVs from AMFI via mfapi.in
+function simulateMovement(scope) { fetchLiveNavs(false); }
+
+function updatePosDate(scope, id, val) {
+  const list = scope === 'sandbox' ? state.sandbox : state.portfolio;
+  const t = list.find(x=>x.id===id);
+  if (!t || !val) return;
+  if (scope === 'sandbox') t.date = val; else t.date = val;
+  saveState();
+  toast('Investment Date Updated', new Date(val).toLocaleDateString('en-IN'), 'info');
+}
+
+function renderAll() { renderMatrix(); renderSandbox(); renderPortfolio(); }
+
+loadState();
+renderAll();
+fetchLiveNavs(true);
+
+// Auto-refresh real NAVs every 5 minutes (AMFI publishes EOD; intraday is static)
+setInterval(() => fetchLiveNavs(true), 5 * 60 * 1000);
+</script>
+
+<!-- ============================================================
+     REGRESSION TESTS (?test=1 to run)
+     Verifies Entry NAV auto-refreshes on date/scheme change for
+     both Sandbox and Live Portfolio dispatch flows.
+============================================================ -->
+<script>
+(function () {
+  if (!/[?&]test=1\b/.test(location.search)) return;
+
+  const log = [];
+  const results = [];
+  function assert(name, cond, detail) {
+    results.push({ name, pass: !!cond, detail: detail || '' });
+    log.push((cond ? '✅' : '❌') + ' ' + name + (detail ? ' — ' + detail : ''));
+  }
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  async function waitFor(fn, timeout = 4000, step = 30) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < timeout) { if (fn()) return true; await sleep(step); }
+    return false;
+  }
+
+  function renderPanel() {
+    const panel = document.createElement('div');
+    panel.id = 'regression-panel';
+    panel.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;background:#0f141c;border:1px solid #2a3647;border-radius:10px;padding:14px 16px;max-width:480px;max-height:70vh;overflow:auto;font-family:JetBrains Mono,monospace;font-size:12px;color:#e6edf7;box-shadow:0 8px 28px rgba(0,0,0,.5)';
+    const passed = results.filter(r => r.pass).length;
+    const total = results.length;
+    const header = `<div style="font-family:Syne,sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:${passed===total?'#22c55e':'#ef4444'}">REGRESSION ${passed}/${total} PASSED</div>`;
+    panel.innerHTML = header + results.map(r =>
+      `<div style="padding:4px 0;color:${r.pass?'#22c55e':'#ef4444'}">${r.pass?'✓':'✗'} ${r.name}${r.detail?`<div style="color:#8b97ab;margin-left:14px">${r.detail}</div>`:''}</div>`
+    ).join('');
+    document.body.appendChild(panel);
+    console.log('[Regression]\n' + log.join('\n'));
+  }
+
+  // Stub network: deterministic historical NAV based on date+code so we
+  // can assert auto-refresh without hitting the live AMFI feed.
+  const origFetch = window.fetch;
+  window.fetch = async function (url) {
+    if (typeof url === 'string' && url.includes('api.mfapi.in/mf/')) {
+      const m = url.match(/\/mf\/(\d+)/);
+      const code = m ? m[1] : '0';
+      // Synthesize 365 days of NAV history
+      const today = new Date();
+      const data = [];
+      for (let i = 0; i < 365; i++) {
+        const dt = new Date(today.getTime() - i * 86400000);
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yy = dt.getFullYear();
+        // NAV varies by code + days-from-today
+        const nav = ((parseInt(code, 10) % 97) + 50 + i * 0.13).toFixed(4);
+        data.push({ date: `${dd}-${mm}-${yy}`, nav });
+      }
+      return { ok: true, json: async () => ({ status: 'SUCCESS', data }) };
+    }
+    return origFetch.apply(this, arguments);
+  };
+
+  async function openModalAndSetup(opener, modalId) {
+    const scheme = state.schemes[0];
+    opener(scheme.id, scheme.nav);
+    await waitFor(() => document.getElementById(modalId).classList.contains('open'));
+  }
+
+  async function testFlow(label, ids, opener) {
+    const { scheme, date, nav, wrap, btn, modal } = ids;
+    await openModalAndSetup(opener, modal);
+    const navInp = document.getElementById(nav);
+    const dateInp = document.getElementById(date);
+    const schemeSel = document.getElementById(scheme);
+    const wrapEl = document.getElementById(wrap);
+    const submitBtn = document.getElementById(btn);
+
+    // --- Date change triggers refresh ---
+    const before = navInp.value;
+    const past = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+    dateInp.value = past;
+    dateInp.dispatchEvent(new Event('change', { bubbles: true }));
+    await sleep(20);
+    assert(`${label}: spinner shown during fetch`, wrapEl.classList.contains('loading'));
+    assert(`${label}: save button disabled during fetch`, submitBtn.disabled === true);
+    assert(`${label}: NAV input disabled during fetch`, navInp.disabled === true);
+    const settled = await waitFor(() => !wrapEl.classList.contains('loading'));
+    assert(`${label}: spinner clears after fetch`, settled);
+    assert(`${label}: save button re-enabled after fetch`, submitBtn.disabled === false);
+    assert(`${label}: NAV value updated on date change`, navInp.value && navInp.value !== before, `before=${before} after=${navInp.value}`);
+
+    // --- Submit guarded while loading ---
+    dateInp.value = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    dateInp.dispatchEvent(new Event('change', { bubbles: true }));
+    await sleep(5);
+    const sandboxLenBefore = state.sandbox.length;
+    const portfolioLenBefore = state.portfolio.length;
+    if (label === 'Sandbox') submitSandboxTrade(); else submitPortfolio();
+    const blocked = (label === 'Sandbox')
+      ? state.sandbox.length === sandboxLenBefore
+      : state.portfolio.length === portfolioLenBefore;
+    assert(`${label}: submit blocked while NAV is loading`, blocked);
+    await waitFor(() => !wrapEl.classList.contains('loading'));
+
+    // --- Scheme change triggers refresh ---
+    if (state.schemes.length > 1) {
+      const prevNav = navInp.value;
+      const other = state.schemes.find(s => s.id !== schemeSel.value);
+      schemeSel.value = other.id;
+      schemeSel.dispatchEvent(new Event('change', { bubbles: true }));
+      await sleep(20);
+      assert(`${label}: spinner shown on scheme change`, wrapEl.classList.contains('loading'));
+      const settled2 = await waitFor(() => !wrapEl.classList.contains('loading'));
+      assert(`${label}: spinner clears after scheme-change fetch`, settled2);
+      assert(`${label}: NAV value updated on scheme change`, navInp.value && navInp.value !== prevNav, `before=${prevNav} after=${navInp.value}`);
+    }
+
+    closeModal(modal);
+  }
+
+  async function run() {
+    // Wait for app boot
+    await waitFor(() => window.state && state.schemes && state.schemes.length && typeof openSandboxModal === 'function');
+    try {
+      await testFlow('Sandbox',
+        { scheme: 'sbScheme', date: 'sbDate', nav: 'sbNav', wrap: 'sbNavWrap', btn: 'sbSubmitBtn', modal: 'sandboxModal' },
+        openSandboxModal);
+      await testFlow('Live Portfolio',
+        { scheme: 'pfScheme', date: 'pfDate', nav: 'pfNav', wrap: 'pfNavWrap', btn: 'pfSubmitBtn', modal: 'portfolioModal' },
+        openPortfolioModal);
+    } catch (e) {
+      assert('test harness crashed', false, e && e.message);
+    }
+    renderPanel();
+  }
+  if (document.readyState === 'complete') run();
+  else window.addEventListener('load', run);
+})();
+</script>
+
+</body>
+</html>
