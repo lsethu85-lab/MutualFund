@@ -1,6 +1,6 @@
 # Quantum MF Terminal
 
-An institutional-grade, single-file mutual fund analytics dashboard for Indian mutual funds. Built as a self-contained `mf_dashboard_3.html` — no build step, no backend, just open in a browser.
+An institutional-grade, single-file mutual fund analytics dashboard for Indian mutual funds. Built as a self-contained `index.html` — no build step, no backend, just open in a browser.
 
 Live NAV data is sourced from the public [MFAPI.in](https://www.mfapi.in/) endpoints.
 
@@ -44,7 +44,7 @@ That's it. No `npm install`, no server, no API keys.
 
 ### Running the regression tests
 ```
-file:///path/to/mf_dashboard_3.html?test=1
+file:///path/to/index.html?test=1
 ```
 A floating panel reports each assertion. All rows should be green.
 
